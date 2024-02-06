@@ -40,7 +40,7 @@ def main(args):
     score_file_name = f"./{args.dataset_name.replace('/', '_')}_{args.model.replace('/','_')}_scores.txt" 
     with open(score_file_name, mode="w", encoding='utf-8') as f:
         for pred, ref in zip(predictions, references):
-            score = metric.compute(predictions=pred, references=ref)['score']
+            score = metric.compute(predictions=[pred], references=ref)['score']
             score = round(score, 6)
             f.write(f'{pred} :: {ref[0]} :: {score}\n')
 
