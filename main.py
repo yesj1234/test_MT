@@ -37,7 +37,7 @@ def main(args):
         predictions.append(prediction)
         references.append([data[f'sentence_{args.target_lang}']])
     assert len(predictions) == len(ds), f'length of predictions({len(predictions)}) does not match the length of ds({len(ds)})'
-    assert len(transcriptions) == len(ds), f'length of predictions({len(transcriptions)}) does not match the length of ds({len(ds)})'
+    assert len(references) == len(ds), f'length of predictions({len(references)}) does not match the length of ds({len(ds)})'
     # save the predictions in pd.DataFrame.
     DF_FILENAME = f'{args.model.replace("/", "_")}_{args.dataset_name.replace("/","_")}.csv'
     df.insert(len(ds), f'{args.model.replace("/", "_")}_prediction', predictions, True)
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", help="One of ['facebook/nllb-200-distilled-600M', 'facebook/nllb-200-distilled-1.3B', 'facebook/nllb-200-3.3B', 'facebook/mbart-large-50-many-to-many-mmt']")
     parser.add_argument("--dataset_name", default="facebook/flores")
-    parser.add_argument("--source_lang")
+    parser.add_argument("--source_lang", help="eng_Latn, kor_Hang, zho_Hans, jpn_Jpan")
     parser.add_argument("--target_lang")
     args = parser.parse_args()
     main(args)
