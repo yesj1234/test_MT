@@ -7,6 +7,7 @@ import sys
 import evaluate
 import pandas as pd 
 import numpy as np
+import traceback 
 from tqdm import tqdm 
 logger = logging.getLogger("MainLogger")
 logging.basicConfig(
@@ -27,41 +28,34 @@ def main(args):
     model = AutoModelForSeq2SeqLM.from_pretrained(args.model).to(DEVICE)
     
     #3. generate predictions
-   
     predictions = []
     references = []
     for data in tqdm(ds, total=len(ds), desc="Running prediction", ascii=' =', leave=True, position=0):
-        input_ids = tokenizer(data[f'sentence_{args.source_lang}'], max_length=512, padding=True, return_tensors='pt').input_ids.to(DEVICE)
-        outputs = model.generate(input_ids,forced_bos_token_id=tokenizer.lang_code_to_id[args.target_lang])
-        prediction = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        predictions.append(prediction)
+        try:
+            input_ids = tokenizer(data[f'sentence_{args.source_lang}'], max_length=512, padding=True, return_tensors='pt').input_ids.to(DEVICE)
+            outputs = model.generate(input_ids,forced_bos_token_id=tokenizer.lang_code_to_id[args.target_lang])
+            prediction = tokenizer.decode(outputs[0], skip_special_tokens=True)
+            predictions.append(prediction)
+        except Exception as e:
+            predictinos.append("No Prediction")
+            traceback.print_tb(e.__traceback__)
         references.append([data[f'sentence_{args.target_lang}']])
     assert len(predictions) == len(ds), f'length of predictions({len(predictions)}) does not match the length of ds({len(ds)})'
     assert len(references) == len(ds), f'length of predictions({len(references)}) does not match the length of ds({len(ds)})'
-    # save the predictions in pd.DataFrame.
+
     DF_FILENAME = f'{args.model.replace("/", "_")}_{args.dataset_name.replace("/","_")}.csv'
-    df.insert(len(ds), f'{args.model.replace("/", "_")}_prediction', predictions, True)
-    df.to_csv(DF_FILENAME)
+    df.insert(len(df.columns), column=f'{args.model.replace("/", "_")}_prediction', value=predictions, allow_duplicates=True)
+
     #4. compute the metrics 
     metric = evaluate.load('sacrebleu')
     score_file_name = f"./{args.dataset_name.replace('/', '_')}_{args.model.replace('/','_')}_scores.txt" 
     scores = []
-    with open(score_file_name, mode="w", encoding='utf-8') as f:
-        for pred, ref in zip(predictions, references):
-            score = metric.compute(predictions=[pred], references=ref)['score']
-            score = round(score, 6)
-            scores.append(score)
-            f.write(f'{pred} :: {ref[0]} :: {score}\n')
-    df.insert(len(ds), 'score', scores, True)
+    for pred, ref in zip(predictions, references):
+        score = metric.compute(predictions=[pred], references=ref)['score']
+        score = round(score, 6)
+        scores.append(score)
+    df.insert(len(df.columns), column='score', value=scores, allow_duplicate=True)
     df.to_csv(DF_FILENAME)
-    scores = 0
-    with open(score_file_name, mode="r", encoding='utf-8') as g:
-        lines = g.readlines()
-        for line in lines:
-            _, _, score = line.split(" :: ")
-            score = round(float(score[:-2]), 2)
-            scores.append(score) 
-        logger.info(f"BLEU: {sum(scores)/len(lines)}")
             
             
             
