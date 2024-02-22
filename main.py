@@ -37,7 +37,7 @@ def main(args):
             prediction = tokenizer.decode(outputs[0], skip_special_tokens=True)
             predictions.append(prediction)
         except Exception as e:
-            predictinos.append("No Prediction")
+            predictions.append("No Prediction")
             traceback.print_tb(e.__traceback__)
         references.append([data[f'sentence_{args.target_lang}']])
     assert len(predictions) == len(ds), f'length of predictions({len(predictions)}) does not match the length of ds({len(ds)})'
